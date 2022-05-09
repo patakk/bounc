@@ -54,18 +54,19 @@ function setup(){
 
     envelope = new p5.Env();
     envelope.setRange(.9, 0.0);
-    envelope.setADSR(0.02, 1.6, 0.6, 2.4);
+    //envelope.setADSR(0.02, 1.6, 0.6, 2.4);
+    envelope.setADSR(0.01, 0.3, 0.1, 0.2);
 
     envelopeBass = new p5.Env();
     envelopeBass.setRange(.0, 0.0);
-    envelopeBass.setADSR(0.02, 1.6, 0.6, 2.4);
+    //envelopeBass.setADSR(0.02, 1.6, 0.6, 2.4);
 
     osc = new p5.SinOsc();
     osc.freq(150);
     osc.amp(0);
     osc.start();
 
-    oscBass = new p5.TriOsc();
+    oscBass = new p5.SinOsc();
     oscBass.freq(150);
     oscBass.amp(0);
     oscBass.start();
@@ -295,8 +296,8 @@ function drawMatrix(pg){
                 impactx = -10000;
                 impacty = -10000;
                 var note = notes[floor(random(notes.length))];
-                osc.freq(300 * pow(1.059463094359, note-12.));
-                oscBass.freq(220 * pow(1.059463094359, note-24.));
+                osc.freq(170 * pow(1.059463094359, note));
+                oscBass.freq(170 * pow(1.059463094359, note-12.));
                 envelope.play(osc, 0, 0.1);
                 envelopeBass.play(oscBass, 0, 0.1);
             }
