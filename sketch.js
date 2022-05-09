@@ -9,12 +9,18 @@ var shouldReset = true;
 
 var firstClick = false;
 
-var N = 15;
+var N = 10;
 var D = 20;
 var matrix = [];
 var pv, vv, av;
 
-var alphab = 'ABCDEFGHIJ0123456789.'
+let osc;
+let oscBass;
+let envelope;
+let envelopeBass;
+var notes = [0, 2., 3., 2., 2., 3.];
+
+var alphab = ',-;:-;:-;:"\'"\'"\'-/|\\-0o0o0o0o7h08hneoi0HA(HD)/gX,-;:-;:-;:"\'"\'"\'-/|\\-'
 var alhapbImgs = {};
 
 function preload() {
@@ -28,14 +34,15 @@ function setup(){
     pg = createGraphics(width, height, WEBGL);
     click = createGraphics(width, height);
 
-    for(var k = 0; k < alphab.length; k++){
-        alhapbImgs[alphab[k]] = createGraphics(25, 25);
-        alhapbImgs[alphab[k]].clear();
-        alhapbImgs[alphab[k]].textFont(pressstart);
-        alhapbImgs[alphab[k]].textSize(20);
-        alhapbImgs[alphab[k]].textAlign(CENTER, CENTER);
-        alhapbImgs[alphab[k]].fill(10);
-        alhapbImgs[alphab[k]].text(alphab[k], 15, 15);
+    var aaa = '.,-;:-;:-;:"\'"\'"\'-/|\\-0o0o0o0o7h08hneoi0HA(HD)/gX';
+    for(var k = 0; k < aaa.length; k++){
+        alhapbImgs[aaa[k]] = createGraphics(25, 25);
+        alhapbImgs[aaa[k]].clear();
+        alhapbImgs[aaa[k]].textFont(pressstart);
+        alhapbImgs[aaa[k]].textSize(20);
+        alhapbImgs[aaa[k]].textAlign(CENTER, CENTER);
+        alhapbImgs[aaa[k]].fill(10);
+        alhapbImgs[aaa[k]].text(aaa[k], 15, 15);
     }
 
     reset();
@@ -45,6 +52,23 @@ function setup(){
     pg.colorMode(HSB, 100);
     pg.imageMode(CENTER);
 
+    envelope = new p5.Env();
+    envelope.setRange(.9, 0.0);
+    envelope.setADSR(0.02, 1.6, 0.6, 2.4);
+
+    envelopeBass = new p5.Env();
+    envelopeBass.setRange(.0, 0.0);
+    envelopeBass.setADSR(0.02, 1.6, 0.6, 2.4);
+
+    osc = new p5.SinOsc();
+    osc.freq(150);
+    osc.amp(0);
+    osc.start();
+
+    oscBass = new p5.TriOsc();
+    oscBass.freq(150);
+    oscBass.amp(0);
+    oscBass.start();
 }
 
 var mx, my;
@@ -73,9 +97,11 @@ function draw(){
     //pg.line(pv.x, pv.y, pv.x+av.x*10, pv.y+av.y*10);
     //toc.mult(-1);
 
+    var frqq = 0.001;
+    frqq = 0.005 + 0.02*pow(noise(frameCount*0.01), 4);
     var nz = createVector(0, 0);
-    nz.x = -1 + 2*power(noise(pv.x*0.001, pv.y*0.001, 9331.31+frameCount*0.0031), 2);
-    nz.y = -1 + 2*power(noise(pv.x*0.001, pv.y*0.001, 883.432+frameCount*0.0031), 2);
+    nz.x = -1 + 2*power(noise(pv.x*frqq, pv.y*frqq, 9331.31+frameCount*0.0031), 2);
+    nz.y = -1 + 2*power(noise(pv.x*frqq, pv.y*0.001, 883.432+frameCount*0.0031), 2);
     nz.mult(1.4);
 
     //pg.stroke(18);
@@ -147,8 +173,7 @@ function draw(){
     pg.noStroke();
     //pg.ellipse(pv.x, pv.y, 20, 20);
     pg.imageMode(CENTER);
-    pg.image(alhapbImgs["A"], pv.x, pv.y);
-
+    pg.image(alhapbImgs["X"], pv.x, pv.y);
 
 
     shaderOnCanvas(pg);
@@ -175,7 +200,7 @@ function drawMatrix(pg){
             for(var i = 0; i < N; i++){
                 var x = i*D - (N-1)/2*D;
                 var y = j*D - (N-1)/2*D;
-                matrix[j][i] = round(matrix[j][i]*0.8);
+                //matrix[j][i] = round(matrix[j][i]*0.8);
 
 
                 if(i > 0 && i < N-1 && j > 0 && j < N-1){
@@ -226,6 +251,35 @@ function drawMatrix(pg){
                                  + matrix[j+0][i-1]
                     tempmat[j][i] = tempmat[j][i] + ceil((floor(val / 6)-tempmat[j][i])*0.1);
                 }
+
+                if(i == 0 && j == 0){
+                    var val = matrix[j+1][i+0]
+                             + matrix[j+0][i+0]
+                             + matrix[j+1][i+1]
+                             + matrix[j+0][i+1]
+                    tempmat[j][i] = tempmat[j][i] + ceil((floor(val / 4)-tempmat[j][i])*0.1);
+                }
+                if(i == N-1 && j == 0){
+                    var val = matrix[j+1][i+0]
+                             + matrix[j+0][i+0]
+                             + matrix[j+1][i-1]
+                             + matrix[j+0][i-1]
+                    tempmat[j][i] = tempmat[j][i] + ceil((floor(val / 4)-tempmat[j][i])*0.1);
+                }
+                if(i == 0 && j == N-1){
+                    var val = matrix[j-1][i+0]
+                             + matrix[j+0][i+0]
+                             + matrix[j-1][i+1]
+                             + matrix[j+0][i+1]
+                    tempmat[j][i] = tempmat[j][i] + ceil((floor(val / 4)-tempmat[j][i])*0.1);
+                }
+                if(i == N-1 && j == N-1){
+                    var val = matrix[j-1][i+0]
+                             + matrix[j+0][i+0]
+                             + matrix[j-1][i-1]
+                             + matrix[j+0][i-1]
+                    tempmat[j][i] = tempmat[j][i] + ceil((floor(val / 4)-tempmat[j][i])*0.1);
+                }
             }
         }
         matrix = tempmat;
@@ -237,9 +291,14 @@ function drawMatrix(pg){
             var x = i*D - (N-1)/2*D;
             var y = j*D - (N-1)/2*D;
             if(dist(x, y, impactx, impacty) < D*1.8 && (i==0 || i==N-1 || j==0 || j==N-1)){
-                matrix[j][i] = alphab.length-2;
+                matrix[j][i] = 1000;
                 impactx = -10000;
                 impacty = -10000;
+                var note = notes[floor(random(notes.length))];
+                osc.freq(300 * pow(1.059463094359, note-12.));
+                oscBass.freq(220 * pow(1.059463094359, note-24.));
+                envelope.play(osc, 0, 0.1);
+                envelopeBass.play(oscBass, 0, 0.1);
             }
         }
     }
@@ -250,8 +309,8 @@ function drawMatrix(pg){
             var x = i*D - (N-1)/2*D;
             var y = j*D - (N-1)/2*D;
             pg.fill(0);
-            if(matrix[j][i] > 0){
-                pg.image(alhapbImgs[alphab[matrix[j][i]]], x, y);
+            if(matrix[j][i] > 1){
+                pg.image(alhapbImgs[alphab[matrix[j][i]%alphab.length]], x, y);
                 pg.fill(0, 100, matrix[j][i]);
             }
             else{
@@ -311,6 +370,8 @@ function reset(){
 
 function shaderOnCanvas(tex){
     blurShader.setUniform('tex0', tex);
+    blurShader.setUniform('texelSize', [1 / width, 1 / height]);
+
     shader(blurShader);
     fill(255);
     rect(-width/2, -height/2, width, height);
